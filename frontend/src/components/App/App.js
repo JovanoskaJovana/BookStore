@@ -1,25 +1,125 @@
-import logo from '../../logo.svg';
 import './App.css';
+import React, {Component} from "react";
+import {BrowserRouter as Router, Route, Routes, Navigate} from "react-router-dom";
+import Books from "../Books/books";
+import BookStoreService from '../../repository/BookStoreRepository';
+import BookAdd from "../Books/bookAdd";
+import BookEdit from "../Books/bookEdit";
+import Header from "../Header/header";
+import Categories from "../Categories/categories";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      books: [],
+      authors: [],
+      categories: [],
+      selectedBook: {},
+    }
+  }
+
+  render() {
+    return (
+        <Router>
+          <Header/>
+          <main>
+            <div className="container">
+              <Routes>
+                <Route path="/books/categories" element={<Categories categories={this.state.categories} />} />
+                <Route path="/books/add" element={<BookAdd books={this.state.books}
+                                                           authors={this.state.authors}
+                                                           onAddBook={this.addBook}/>} />
+                <Route path="/books/edit/:id" element={<BookEdit books={this.state.selectedBook}
+                                                                 authors={this.state.authors}
+                                                                 onEditBook={this.editBook} /> } />
+                <Route path="/books" element={<Books books={this.state.books}
+                                                     onRefreshBooks={this.loadBooks}
+                                                     onDelete={this.deleteBook}
+                                                     onEditBook={this.getBook}
+                                                     onRentBook={this.rentBook}/>} />
+                <Route path="/" element={<Navigate to="/books" replace />} />
+
+              </Routes>
+            </div>
+          </main>
+        </Router>
+
+    );
+  }
+
+  componentDidMount() {
+    this.loadBooks();
+    this.loadAuthors();
+    this.loadCategories();
+  }
+
+
+  loadBooks = () => {
+    BookStoreService.fetchBooks()
+        .then((data) => {
+          this.setState({
+            books: data.data
+          })
+        });
+  }
+
+
+  loadAuthors = () => {
+    BookStoreService.fetchAuthors()
+        .then((data) => {
+          this.setState({
+            authors: data.data
+          })
+        });
+  }
+
+  loadCategories = () => {
+    BookStoreService.fetchCategories()
+        .then((data) => {
+          this.setState({
+            categories: data.data
+          })
+        });
+  }
+
+
+
+  addBook = (name, bookCategory, authorId, availableCopies) => {
+    BookStoreService.addBook(name, bookCategory, authorId, availableCopies)
+        .then((data) => {
+          this.loadBooks();
+        })
+  }
+
+  deleteBook = (id) => {
+    BookStoreService.deleteBook(id)
+        .then(() => {
+          this.loadBooks();
+        });
+  }
+
+  editBook = (id, name, bookCategory, authorId, availableCopies) => {
+    BookStoreService.editBook(id, name, bookCategory, authorId, availableCopies)
+        .then(() => {
+          this.loadBooks();
+        });
+  }
+
+  getBook = (id) => {
+    BookStoreService.getBookById(id)
+        .then((data) => {
+          this.setState({
+            selectedBook: data.data
+          })
+        })
+  }
+
+  rentBook = (id) => {
+    BookStoreService.rentBook(id)
+        .then(() => {
+          this.loadBooks();
+        });
+  }
 }
-
 export default App;
