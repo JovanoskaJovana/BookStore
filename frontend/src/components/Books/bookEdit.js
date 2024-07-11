@@ -16,7 +16,8 @@ const BookEdit = (props) => {
     useEffect(() => {
         if (id) {
             BookStoreService.getBookById(id)
-                .then((data) => {
+                .then((response) => { //that contains various properties including data, status, etc.
+                    const data = response.data; //access only the actual data from the response object
                     setFormData({
                         name: data.name,
                         bookCategory: data.bookCategory,
