@@ -1,8 +1,11 @@
 package mk.ukim.finki.bookstoreproject.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import mk.ukim.finki.bookstoreproject.model.enumerations.BookCategory;
 
+@Entity
+@Data
 public class Book {
 
     @Id
