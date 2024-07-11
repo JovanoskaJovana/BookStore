@@ -3,9 +3,13 @@ package mk.ukim.finki.bookstoreproject.service.implementation;
 import mk.ukim.finki.bookstoreproject.model.Author;
 import mk.ukim.finki.bookstoreproject.model.Book;
 import mk.ukim.finki.bookstoreproject.model.dto.BookDto;
+import mk.ukim.finki.bookstoreproject.model.events.BookChangedEvent;
+import mk.ukim.finki.bookstoreproject.model.events.BookCreatedEvent;
+import mk.ukim.finki.bookstoreproject.model.events.BookDeletedEvent;
 import mk.ukim.finki.bookstoreproject.model.exceptions.AuthorNotFoundException;
 import mk.ukim.finki.bookstoreproject.model.exceptions.BookNotFoundException;
 import mk.ukim.finki.bookstoreproject.service.BookService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,10 +22,12 @@ public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
     private  final AuthorRepository authorRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public BookServiceImpl(BookRepository bookRepository, AuthorRepository authorRepository) {
+    public BookServiceImpl(BookRepository bookRepository, AuthorRepository authorRepository, ApplicationEventPublisher applicationEventPublisher) {
         this.bookRepository = bookRepository;
         this.authorRepository = authorRepository;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Override
@@ -36,9 +42,11 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Optional<Book> save(BookDto bookDto) {
+        System.out.println(bookDto);
         Author author = authorRepository.findById(bookDto.getAuthorId()).orElseThrow(() -> new AuthorNotFoundException(bookDto.getAuthorId()));
         Book book = new Book(bookDto.getName(), bookDto.getBookCategory(), author, bookDto.getAvailableCopies());
         bookRepository.save(book);
+        applicationEventPublisher.publishEvent(new BookCreatedEvent(book));
         return Optional.of(book);
     }
 
@@ -58,12 +66,15 @@ public class BookServiceImpl implements BookService {
         book.setAvailableCopies(bookDto.getAvailableCopies());
 
         bookRepository.save(book);
+        applicationEventPublisher.publishEvent(new BookChangedEvent(book));
         return Optional.of(book);
     }
 
     @Override
     public void deleteById(Long id) {
+        Book book = bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
         bookRepository.deleteById(id);
+        applicationEventPublisher.publishEvent(new BookDeletedEvent(book));
     }
 
     @Override
